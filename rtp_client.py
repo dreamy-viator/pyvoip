@@ -10,13 +10,14 @@ from threading import Thread
 DEFAULT_CHUNK_SIZE = 4096 + 12
 
 class RTPReceiveClient:
-    DEFAULT_LOCAL_HOST = '127.0.0.1'
     RTP_TIMEOUT = 10000  # in milliseconds
 
     def __init__(
             self,
+            host_address,
             rtp_port: int):
 
+        self.host_address = host_address
         self.rtp_port = rtp_port
         self._frame_buffer = [] #TODO.. FrameSize Limit
         self.is_receiving_rtp = False
@@ -42,19 +43,20 @@ class RTPReceiveClient:
 
     def _handle_audio_receive(self):
         self._rtp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._rtp_socket.bind((self.DEFAULT_LOCAL_HOST, self.rtp_port))
+        self._rtp_socket.bind((self.host_address, self.rtp_port))
         self._rtp_socket.settimeout(self.RTP_TIMEOUT / 1000.)
         while True:
             if not self.is_receiving_rtp:
                 sleep(self.RTP_TIMEOUT / 1000.)  # diminish cpu hogging
                 continue
 
-            print('receive packet\n')
+            print('receive packet')
             packet = self._recv_rtp_packet()
             # for debugging
-            packet.print_header()
+            # packet.print_header()
 
             audio_data = packet.payload
+            print('audio data length :', len(audio_data))
             buffer = np.frombuffer(audio_data, dtype=np.int)
             self.callback(buffer)
             # self._frame_buffer.append(buffer)
@@ -99,9 +101,9 @@ class RTPSendClient:
                            timestamp=ts,
                            payload=data)
 
-        print('send packet\n')
-        rtp_packet.print_header()
+        # rtp_packet.print_header()
         packet = rtp_packet.get_packet()
+        print('send packet', len(packet))
         self._send_rtp_packet(packet)
 
     def _setup_rtp(self):

@@ -14,6 +14,7 @@ class Client:
             self,
             remote_host_address,
             remote_host_port,
+            host_address,
             rtp_port):
 
 
@@ -23,13 +24,13 @@ class Client:
         self.sender = RTPSendClient(remote_host_address=remote_host_address,
                                     remote_host_port=remote_host_port)
 
-        self.receiver = RTPReceiveClient(rtp_port=rtp_port)
+        self.receiver = RTPReceiveClient(host_address=host_address,
+                                         rtp_port=rtp_port)
         self.aout = AudioOutput()
         self.frame_count = 0
         print('init client')
 
     def _callback(self, in_data, frame_count, time_info, status):
-        print(in_data)
         print(len(in_data), frame_count, time_info, status)
 
         timestamp = int(frame_count / self.SAMPLE_RATE * 1000)
@@ -44,7 +45,9 @@ class Client:
 
     def _receive_callback(self, audio):
         print('audio received!')
-        self.aout.write(audio)
+        buffer = np.frombuffer(audio, dtype=np.int8)
+        print(buffer, max(buffer), min(buffer))
+        self.aout.write(buffer)
 
     def start_calling(self):
         self.sender.start()
