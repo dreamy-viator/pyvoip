@@ -7,7 +7,7 @@ import numpy as np
 from time import sleep
 from threading import Thread
 
-DEFAULT_CHUNK_SIZE = 4096 + 12
+DEFAULT_CHUNK_SIZE = 4096 * 2 + 12
 
 class RTPReceiveClient:
     RTP_TIMEOUT = 10000  # in milliseconds
@@ -57,9 +57,9 @@ class RTPReceiveClient:
 
             audio_data = packet.payload
             print('audio data length :', len(audio_data))
-            buffer = np.frombuffer(audio_data, dtype=np.int)
-            self.callback(buffer)
-            # self._frame_buffer.append(buffer)
+            print('audio data ts :', packet.timestamp)
+            self.callback(audio_data)
+
 
     def _recv_rtp_packet(self, size=DEFAULT_CHUNK_SIZE) -> RTPPacket:
         recv = bytes()
@@ -72,7 +72,7 @@ class RTPReceiveClient:
             except socket.timeout:
                 print('Receive RTP Socket timeout')
                 continue
-        print(f"Received from server: {repr(recv)}")
+        # print(f"Received from server: {repr(recv)}")
 
         return RTPPacket.from_packet(recv)
 

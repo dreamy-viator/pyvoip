@@ -28,26 +28,26 @@ class Client:
                                          rtp_port=rtp_port)
         self.aout = AudioOutput()
         self.frame_count = 0
+        self.start_ts = -1.0
         print('init client')
 
     def _callback(self, in_data, frame_count, time_info, status):
-        print(len(in_data), frame_count, time_info, status)
+        timestamp = time_info['input_buffer_adc_time']
+        if self.start_ts == -1:
+            self.start_ts = timestamp
 
-        timestamp = int(frame_count / self.SAMPLE_RATE * 1000)
-
+        ts = timestamp - self.start_ts
+        ts = int(ts * 1000 * 1000)  #microseconds
         self.sender.send_audio(
             data=in_data,
-            ts=timestamp,
+            ts=ts,
             frame_count=self.frame_count)
 
         self.frame_count += 1
         return (None, pyaudio.paContinue)
 
     def _receive_callback(self, audio):
-        print('audio received!')
-        buffer = np.frombuffer(audio, dtype=np.int8)
-        print(buffer, max(buffer), min(buffer))
-        self.aout.write(buffer)
+        self.aout.write(audio)
 
     def start_calling(self):
         self.sender.start()

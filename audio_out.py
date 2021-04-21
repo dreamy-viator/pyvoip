@@ -3,7 +3,7 @@ import pyaudio
 
 class AudioOutput:
     CHANNELS = 1
-    FORMAT = pyaudio.paInt8
+    FORMAT = pyaudio.paInt16
     RATE = 16000
 
     def __init__(self):
