@@ -8,7 +8,7 @@ import numpy as np
 
 class Client:
     SAMPLE_RATE = 16000
-    CHUNK_SIZE = 4096
+    #CHUNK_SIZE = 4096
 
     def __init__(
             self,
@@ -17,7 +17,7 @@ class Client:
             host_address,
             rtp_port):
 
-
+        self.CHUNK_SIZE = 960
         self.mic = MicDevice(sr=self.SAMPLE_RATE,
                              chunk_size=self.CHUNK_SIZE)
 
@@ -26,6 +26,10 @@ class Client:
 
         self.receiver = RTPReceiveClient(host_address=host_address,
                                          rtp_port=rtp_port)
+        
+        self.opus_encode = opuslib.Encoder(self.SAMPLE_RATE, 1, opuslib.APPLICATION_VOIP)
+        self.opus_decode = opuslib.Decoder(self.SAMPLE_RATE, 1)
+        
         self.aout = AudioOutput()
         self.frame_count = 0
         self.start_ts = -1.0
@@ -38,8 +42,12 @@ class Client:
 
         ts = timestamp - self.start_ts
         ts = int(ts * 1000 * 1000)  #microseconds
+        
+         """ add opus """
+        encoded = self.opus_encode.encode(pcm_data=in_data, frame_size=self.CHUNK_SIZE)      
+        
         self.sender.send_audio(
-            data=in_data,
+            data=encoded,
             ts=ts,
             frame_count=self.frame_count)
 
@@ -47,7 +55,8 @@ class Client:
         return (None, pyaudio.paContinue)
 
     def _receive_callback(self, audio):
-        self.aout.write(audio)
+        decoded = self.opus_decode.decode(audio, frame_size=self.CHUNK_SIZE)
+        self.aout.write(decoded)
 
     def start_calling(self):
         self.sender.start()
