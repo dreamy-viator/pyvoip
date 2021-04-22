@@ -106,6 +106,15 @@ class RTPSendClient:
         print('send packet', len(packet))
         self._send_rtp_packet(packet)
 
+    def send_audio_packet(self, data, ts, frame_count):
+        rtp_packet = RTPPacket(payload_type=RTPPacket.TYPE.OPUS,
+                           sequence_number=frame_count,
+                           timestamp=ts,
+                           payload=data)
+
+        packet = rtp_packet.get_packet()
+        return packet
+
     def _setup_rtp(self):
         print('Setting up RTP socket...')
         self._rtp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
