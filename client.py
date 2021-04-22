@@ -19,7 +19,7 @@ class Client:
     SAMPLE_RATE = 16000
     CHUNK_SIZE = 4096
     STUN_SERVER = ("stun.l.google.com", 19302)
-    SIGNAL_SERVER = 'ws://localhost:8765'
+    SIGNAL_SERVER = 'ws://47.242.210.177:8765'
 
     def __init__(
             self,
