@@ -10,10 +10,9 @@ import websockets
 import json
 import asyncio
 import threading
-
 from rtp.rtp_packet import RTPPacket
-from queue import Queue
 
+from queue import Queue
 
 class Client:
     SAMPLE_RATE = 16000
@@ -28,7 +27,7 @@ class Client:
             host_address,
             rtp_port):
 
-        self.queue = Queue()
+        self.queue = []
         self.mic = MicDevice(sr=self.SAMPLE_RATE,
                              chunk_size=self.CHUNK_SIZE)
 
@@ -40,6 +39,7 @@ class Client:
         self.aout = AudioOutput()
         self.frame_count = 0
         self.start_ts = -1.0
+        self.lock = threading.Lock()
         print('init client')
 
     def _callback(self, in_data, frame_count, time_info, status):
@@ -49,16 +49,39 @@ class Client:
 
         ts = timestamp - self.start_ts
         ts = int(ts * 1000 * 1000)  #microseconds
-        self.sender.send_audio(
+        packet = self.sender.send_audio_packet(
             data=in_data,
             ts=ts,
             frame_count=self.frame_count)
-
+        with self.lock:
+            self.queue.append(packet)
         self.frame_count += 1
         return (None, pyaudio.paContinue)
 
     def _receive_callback(self, audio):
         self.aout.write(audio)
+
+    def thr1(self):
+        # we need to create a new loop for the thread, and set it as the 'default'
+        # loop that will be returned by calls to asyncio.get_event_loop() from this
+        # thread.
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        loop.run_until_complete(self.answer())
+        loop.close()
+
+    def thr2(self):
+        # we need to create a new loop for the thread, and set it as the 'default'
+        # loop that will be returned by calls to asyncio.get_event_loop() from this
+        # thread.
+        # self.mic.start(self._callback)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        loop.run_until_complete(self.send())
+        loop.close()
+
 
     def start_calling(self, roomId):
         self.roomId = roomId
@@ -71,13 +94,21 @@ class Client:
         # # audio output
         self.aout.open()
         self.aout.start()
+        threads = []
 
+        # thread1 = threading.Thread(target=self.thr1)
+        thread2 = threading.Thread(target=self.thr2)
+        # threads.append(thread1)
+        threads.append(thread2)
+
+        [t.start() for t in threads]
+        # [t.join() for t in threads]
+        asyncio.get_event_loop().run_until_complete(self.answer())
         # num_threads = 2
         # threads = [threading.Thread(target=self.thr, args=(i,)) for i in range(num_threads)]
         # [t.start() for t in threads]
         # [t.join() for t in threads]
         #
-        asyncio.get_event_loop().run_until_complete(self.answer())
         print('start calling ...')
 
     def stop_calling(self):
@@ -94,10 +125,16 @@ class Client:
         else:
             raise ConnectionError("Cannot send data, not connected")
 
-    async def send(self, packet):
+    async def send(self):
         component = 1
-        # print("sending %s on component %d" % (repr(data), component))
-        await self.connection.sendto(packet, component)
+        while True:
+            with self.lock:
+                if len(self.queue):
+                    packet = self.queue.pop()
+                else:
+                    continue
+                # print("sending %s on component %d" % (repr(packet), component))
+                await self.connection.sendto(packet, component)
 
     async def answer(self):
         # echo data back
