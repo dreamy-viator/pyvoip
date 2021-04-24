@@ -71,21 +71,8 @@ class Client:
         decoded = self.opus_decode.decode(audio, frame_size=self.CHUNK_SIZE)
         self.aout.write(decoded)
 
-    def thr1(self):
-        # we need to create a new loop for the thread, and set it as the 'default'
-        # loop that will be returned by calls to asyncio.get_event_loop() from this
-        # thread.
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
 
-        loop.run_until_complete(self.answer())
-        loop.close()
-
-    def thr2(self):
-        # we need to create a new loop for the thread, and set it as the 'default'
-        # loop that will be returned by calls to asyncio.get_event_loop() from this
-        # thread.
-        # self.mic.start(self._callback)
+    def send_thread(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
@@ -98,27 +85,14 @@ class Client:
         asyncio.get_event_loop().run_until_complete(self.init_singaling())
         asyncio.get_event_loop().run_until_complete(self.get_remote())
         self.sender.start()
-        # self.receiver.start(self._receive_callback)
-        # # mic
+
         self.mic.start(self._callback)
-        # # audio output
         self.aout.open()
         self.aout.start()
-        threads = []
-
-        # thread1 = threading.Thread(target=self.thr1)
-        thread2 = threading.Thread(target=self.thr2)
-        # threads.append(thread1)
-        threads.append(thread2)
-
-        [t.start() for t in threads]
-        # [t.join() for t in threads]
+        thread = threading.Thread(target=self.send_thread)
+        thread.start()
         asyncio.get_event_loop().run_until_complete(self.answer())
-        # num_threads = 2
-        # threads = [threading.Thread(target=self.thr, args=(i,)) for i in range(num_threads)]
-        # [t.start() for t in threads]
-        # [t.join() for t in threads]
-        #
+        thread.join()
         print('start calling ...')
 
     def stop_calling(self):
