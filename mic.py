@@ -6,7 +6,7 @@ class MicDevice:
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 16000
-    CHUNK = 960 #4096
+    CHUNK = 960
 
     def __init__(self, sr=16000,
                  chunk_size=CHUNK):
