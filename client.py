@@ -117,14 +117,13 @@ class Client:
                     packet = self.queue.pop()
                 else:
                     continue
-                # print("sending %s on component %d" % (repr(packet), component))
+                
                 await self.connection.sendto(packet, component)
 
     async def answer(self):
         # echo data back
         while True:
             data, component = await self.connection.recvfrom()
-            # print("echoing %s on component %d" % (repr(data), component))
             packet = RTPPacket.from_packet(data)
             audio_data = packet.payload
             print("received", len(audio_data))
@@ -145,7 +144,7 @@ class Client:
         })
         await websocket.send(joinCmd)
         print("> {}".format(joinCmd))
-
+        print("Waiting other user to join..")
         response = await websocket.recv()
         print("< {}".format(response))
 
@@ -176,11 +175,11 @@ class Client:
             connection.remote_password = resp["password"]
 
             await connection.connect()
-            print("connected")
+            print("Connected!")
 
 
         elif respCmd == "candidate":
-            print('candidate')
+            print('Candidate cmd received')
             print(resp)
             for c in resp["candidates"]:
                 await connection.add_remote_candidate(aioice.Candidate.from_sdp(c))
@@ -201,4 +200,4 @@ class Client:
                 )
             )
             await connection.connect()
-            print("connected")
+            print("Connected!")
