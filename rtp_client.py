@@ -3,7 +3,6 @@ from rtp.rtp_packet import RTPPacket
 from rtp.rtsp_packet import RTSPPacket
 
 import socket
-import numpy as np
 from time import sleep
 from threading import Thread
 

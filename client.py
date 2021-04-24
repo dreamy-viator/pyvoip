@@ -79,6 +79,8 @@ class Client:
         loop.run_until_complete(self.send())
         loop.close()
 
+    async def program(self):
+        await asyncio.gather(self.send(), self.answer())
 
     def start_calling(self, roomId):
         self.roomId = roomId
@@ -90,10 +92,8 @@ class Client:
         self.aout.open()
         self.aout.start()
         print('start calling ...')
-        thread = threading.Thread(target=self.send_thread)
-        thread.start()
-        asyncio.get_event_loop().run_until_complete(self.answer())
-        thread.join()
+        asyncio.get_event_loop().run_until_complete(self.program())
+
 
 
     def stop_calling(self):
@@ -120,6 +120,7 @@ class Client:
                     continue
                 
                 await self.connection.sendto(packet, component)
+                await asyncio.sleep(1e-6)
 
     async def answer(self):
         # echo data back
@@ -129,7 +130,7 @@ class Client:
             audio_data = packet.payload
             print("received", len(audio_data))
             self._receive_callback(audio_data)
-            # await asyncio.sleep(1)
+            await asyncio.sleep(1e-6)
 
 
 
