@@ -39,6 +39,9 @@ async def handler(websocket, path):
                 for c in connected:
                     if c != websocket:
                         await c.send(message)
+    except websockets.ConnectionClosed:
+        print('clear all rooms')
+        rooms.clear()
 
 
     finally:
