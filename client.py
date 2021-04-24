@@ -89,11 +89,12 @@ class Client:
         self.mic.start(self._callback)
         self.aout.open()
         self.aout.start()
+        print('start calling ...')
         thread = threading.Thread(target=self.send_thread)
         thread.start()
         asyncio.get_event_loop().run_until_complete(self.answer())
         thread.join()
-        print('start calling ...')
+
 
     def stop_calling(self):
         # TODO
