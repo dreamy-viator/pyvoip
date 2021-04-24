@@ -1,0 +1,8 @@
+# Python Distribution Package Requirements for OpusLib.
+#
+
+flake8
+pylint
+twine
+mypy
+opuslib
