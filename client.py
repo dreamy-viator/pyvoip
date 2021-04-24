@@ -5,14 +5,13 @@ from mic import MicDevice
 from rtp_client import RTPReceiveClient, RTPSendClient
 import pyaudio
 import aioice
-import numpy as np
 import websockets
 import json
 import asyncio
 import threading
 from rtp.rtp_packet import RTPPacket
 import opuslib
-from queue import Queue
+
 
 class Client:
     SAMPLE_RATE = 16000
